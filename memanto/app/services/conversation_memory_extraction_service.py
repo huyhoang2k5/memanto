@@ -92,6 +92,10 @@ class ConversationMemoryExtractionService:
             content = message.get("content")
             if not isinstance(role, str) or not role.strip():
                 raise ValueError(f"Message {index} is missing a non-empty role")
+            if "\n" in role or "\r" in role or not re.fullmatch(r"^[a-zA-Z0-9_-]+$", role.strip()):
+                raise ValueError(
+                    f"Message {index} contains an invalid role: roles must be single-line alphanumeric tokens"
+                )
             if not isinstance(content, str) or not content.strip():
                 raise ValueError(f"Message {index} is missing non-empty content")
 
