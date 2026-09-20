@@ -89,16 +89,29 @@ class BatchRememberRequest(BaseModel):
 class ConversationMessage(BaseModel):
     """Chat-style message used for conversation memory extraction."""
 
-    role: str = Field(..., min_length=1, max_length=50)
+    role: str = Field(
+        ...,
+        min_length=1,
+        max_length=50,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Message role (e.g. user, assistant, system, tool)",
+    )
     content: str = Field(..., min_length=1, max_length=10000)
 
     @field_validator("role")
     @classmethod
-    def role_must_not_be_blank(cls, value: str) -> str:
-        """Reject message roles that contain only whitespace."""
-        if not value.strip():
+    def role_must_be_safe(cls, value: str) -> str:
+        """Reject message roles that contain line breaks or invalid characters."""
+        token = value.strip()
+        if not token:
             raise ValueError("role must be a non-empty string")
-        return value
+        if "\n" in value or "\r" in value:
+            raise ValueError("role must not contain newline characters")
+        if not re.fullmatch(r"^[a-zA-Z0-9_-]+$", token):
+            raise ValueError(
+                f"Invalid role '{token}': only alphanumeric characters, underscores, and hyphens are allowed"
+            )
+        return token
 
     @field_validator("content")
     @classmethod
